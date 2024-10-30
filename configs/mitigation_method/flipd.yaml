@@ -1,0 +1,6 @@
+name: flipd
+num_inference_steps: 50
+num_images_per_prompt: 1
+target_step: 40 # the target step should be towards the end of the inference steps, but not too much so that it changes semantics
+lr: 0.05
+optim_steps: 20

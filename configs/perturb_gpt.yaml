@@ -1,0 +1,20 @@
+defaults:
+  - attribution_method: flipd
+  - _self_
+
+out_dir: ./outputs
+seed: 0
+num_perturbations: 5
+
+model:
+  model_id: CompVis/stable-diffusion-v1-4
+  guidance_scale: 7.5
+  image_size: 512
+
+levels:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 6
+  - 8

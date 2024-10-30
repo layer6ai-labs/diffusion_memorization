@@ -1,0 +1,6 @@
+name: score_norm
+num_inference_steps: 50
+num_images_per_prompt: 4
+target_step: 0
+lr: 0.05
+optim_steps: 20

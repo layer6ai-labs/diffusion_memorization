@@ -1,0 +1,7 @@
+name: cfg_norm
+num_images_per_prompt: 4
+num_inference_steps: 50
+target_steps:
+  _target_: numpy.arange
+  start: 0
+  stop: ${attribution_method.num_inference_steps}

@@ -1,0 +1,17 @@
+defaults:
+  - mitigation_method: flipd
+  - _self_
+
+out_dir: ./outputs
+seed: 0
+
+model:
+  model_id: CompVis/stable-diffusion-v1-4
+  guidance_scale: 7.5
+  image_size: 512
+  num_inference_steps: 50
+  num_images_per_prompt: 4
+# the captions to be considered
+mem_captions_path: ./match_verbatim_captions.json
+prompt_start_idx: 0
+prompt_end_idx: 100 # no limits
