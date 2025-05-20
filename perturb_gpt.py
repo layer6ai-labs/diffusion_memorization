@@ -48,8 +48,10 @@ def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int,
     prob_values = softmax(logits)
     if method == 'random':
         prob_values = np.ones_like(prob_values) / len(prob_values)
+    prob_values += 1e-3
+    prob_values /= np.sum(prob_values)
     choose_level = min(level, len(prob_values))
-    selected_tokens = np.random.choice(len(prompt_tokens), choose_level, replace=True, p=prob_values)
+    selected_tokens = np.random.choice(len(prompt_tokens), choose_level, replace=False, p=prob_values)
     selected_tokens = [tok_sorted_by_attribute[i] for i in selected_tokens]
 
     gpt_instruction = GPT_INSTRUCTION_FSTR.format(
