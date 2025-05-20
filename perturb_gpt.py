@@ -33,7 +33,7 @@ These are the rules to follow for perturbing tokens:
 Given these requirements, please provide me with a new caption, not as a sequence of tokens, but as a natural language sentence that sematically matches closely with the original caption except for the perturbed tokens. Do not say anything else in response, only provide me with the new caption.
 """
 
-def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int, method: str = 'flipd', temperature: float = 1):
+def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int, method: str = 'flipd', temperature: float = 0.001):
     """
     Takes a list of prompt tokens, the number of tokens to change (level), tokens and attributes as a list [[tok, attr], ...]
     and method (which is either random or looks at the token attributes)
