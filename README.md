@@ -34,7 +34,7 @@ After obtaining these attributions, we can use that information to perturb the p
 Prompt perturbation is done through our `perturb_gpt.py` script. Before that, you have to store your `OPENAI_API_KEY` in a `.env` file in the root directory of this repo, meaning, you should have a file `.env` with the following content:
 
 ```bash
-OPENAI_API_KEY='<your-key>'
+dotenv set OPENAI_API_KEY '<your-key>'
 ```
 
 You can then run the following script:
@@ -44,13 +44,3 @@ python perturb_gpt.py attribution_method=<score_norm|cfg_norm|flipd|random>
 ```
 
 This script looks at the already stored attributions in `outputs/attributions`, therefore, make sure to run the last part first before running this script -- we have however included some default attributions in the repo. Note that we also have a `random` method that perturbs the prompts randomly. Finally, after running this script all the perturbed prompts will be stored in a separate file in `outputs/perturbed_prompts`.
-
-## Prompt Optimization
-
-This method is the analogue of the main inference-time mitigation method described in [Detecting, Explaining, and Mitigating Memorization in Diffusion Models](https://github.com/YuxinWenRick/diffusion_memorization), where during the generation process, a prompt embedding is optimized to minimize the memorization metric, which in that case was the CFG norm. We have also included the LID-based method and also included the score norm method. You can run the following script to optimize the prompts:
-
-```bash
-python inference_time_mitigation_optimization.py mitigation_method=<score_norm|cfg_norm|flipd>
-```
-
-Similar to the perturbation script, this script also looks at prompts that are stored in the `match_verbatim_captions.json` file. After running this script, the optimized prompts thorough the history of optimization will be passed through the generator network and stored in `outputs/inference_time_mitigation`. There are examples already stored in the repo.

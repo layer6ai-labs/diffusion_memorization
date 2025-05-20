@@ -33,6 +33,38 @@ These are the rules to follow for perturbing tokens:
 Given these requirements, please provide me with a new caption, not as a sequence of tokens, but as a natural language sentence that sematically matches closely with the original caption except for the perturbed tokens. Do not say anything else in response, only provide me with the new caption.
 """
 
+def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int, method: str = 'flipd', temperature: float = 1):
+    """
+    Takes a list of prompt tokens, the number of tokens to change (level), tokens and attributes as a list [[tok, attr], ...]
+    and method (which is either random or looks at the token attributes)
+    """
+    dotenv.load_dotenv(override=True)
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    sorted_list = sorted(tokens_and_attributes, key=lambda x: x[1], reverse=True)
+    tok_sorted_by_attribute = [tok for tok, _ in sorted_list]
+    logits = np.array([attr/ temperature for _, attr in sorted_list])
+    prob_values = np.exp(logits) / np.sum(np.exp(logits))
+    if method == 'random':
+        prob_values = np.ones_like(prob_values) / len(prob_values)
+    choose_level = min(level, len(prob_values))
+    selected_tokens = np.random.choice(len(prompt_tokens), choose_level, replace=False, p=prob_values)
+    selected_tokens = [tok_sorted_by_attribute[i] for i in selected_tokens]
+
+    gpt_instruction = GPT_INSTRUCTION_FSTR.format(
+        original_tokens=" ".join(prompt_tokens),
+        target_tokens=" ".join(selected_tokens)
+    )
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "user", "content": gpt_instruction},
+        ],
+        max_tokens=50,
+    )
+    new_prompt = completion.choices[0].message.content
+    return new_prompt, selected_tokens
+
 @hydra.main(version_base=None, config_path="configs", config_name="perturb_gpt")
 def main(cfg: DictConfig):
     
@@ -64,26 +96,16 @@ def main(cfg: DictConfig):
     )
 
     # ---------------------- #
-    # (4) setup GPT API
-    dotenv.load_dotenv(override=True)
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-    # ---------------------- #
     # (3) iterate over all the captions and find attributions
     for prompt, tok_attr in attributions.items():
         if prompt in perturbations:
             print(f"Skipping prompt '{prompt}' as it already exists")
             continue
+
         prompt_tokens = pipe.tokenizer.encode(prompt)
         prompt_tokens = prompt_tokens[1:-1]
         prompt_tokens = prompt_tokens[:75]
         prompt_tokens = [pipe.tokenizer.decode(tok) for tok in prompt_tokens]
-        sorted_list = sorted(tok_attr, key=lambda x: x[1], reverse=True)
-        tok_sorted_by_attribute = [tok for tok, _ in sorted_list]
-        attributions_normalized = [attr for _, attr in sorted_list]
-        attributions_normalized = np.array(attributions_normalized) / np.sum(attributions_normalized)
-        if cfg.attribution_method.name == 'random':
-            attributions_normalized = np.ones_like(attributions_normalized) / len(attributions_normalized)
         
         if prompt not in perturbations:
             perturbations[prompt] = {}
@@ -92,23 +114,14 @@ def main(cfg: DictConfig):
 
             perturbations[prompt][level] = perturbations.get(level, [])
             for _ in range(cfg.num_perturbations - len(perturbations[prompt][level])):
-                choose_level = min(level, len(attributions_normalized))
-                selected_tokens = np.random.choice(len(prompt_tokens), choose_level, replace=False, p=attributions_normalized)
-                selected_tokens = [tok_sorted_by_attribute[i] for i in selected_tokens]
-
-                gpt_instruction = GPT_INSTRUCTION_FSTR.format(
-                    original_tokens=" ".join(prompt_tokens),
-                    target_tokens=" ".join(selected_tokens)
+                
+                # tokenize and all
+                new_prompt, selected_tokens = perturb_prompt(
+                    prompt_tokens=prompt_tokens,
+                    tokens_and_attributes=tok_attr,
+                    level=level,
+                    method=cfg.attribution_method.name,
                 )
-                completion = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[
-                        {"role": "user", "content": gpt_instruction},
-                    ],
-                    max_tokens=50,
-                )
-                new_prompt = completion.choices[0].message.content
-
                 perturbations[prompt][level].append(
                     {
                         "perturbed_prompt": new_prompt,

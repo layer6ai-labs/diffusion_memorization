@@ -456,7 +456,7 @@ class LocalStableDiffusionPipeline(StableDiffusionPipeline):
                         flipd_score_norm_term = torch.norm(
                             noise_pred_uncond + guidance_scale * noise_pred_text, p=2
                         )
-                        flipd = - torch.sqrt(1 - alpha_bar) * flipd_trace_term + flipd_score_norm_term # (+ D) but doesn't matter
+                        flipd = - torch.sqrt(1 - alpha_bar) * flipd_trace_term + flipd_score_norm_term * flipd_score_norm_term # (+ D) but doesn't matter
                         loss = -flipd.mean()
                         (token_grads,) = torch.autograd.grad(loss, [prompt_embeds])
                     else:
@@ -692,7 +692,7 @@ class LocalStableDiffusionPipeline(StableDiffusionPipeline):
                             flipd_score_norm_term = torch.norm(
                                 noise_pred_uncond + guidance_scale * noise_pred_text, p=2
                             )
-                            flipd = - torch.sqrt(1 - alpha_bar) * flipd_trace_term + flipd_score_norm_term # (+ D) but doesn't matter
+                            flipd = - torch.sqrt(1 - alpha_bar) * flipd_trace_term + flipd_score_norm_term * flipd_score_norm_term # (+ D) but doesn't matter
                             loss = -flipd.mean()
                         else:
                             raise ValueError(f"method {method} not supported")
@@ -720,7 +720,7 @@ class LocalStableDiffusionPipeline(StableDiffusionPipeline):
                         if target_loss is not None:
                             if loss_item <= target_loss:
                                 if print_optim is True:
-                                    print(f"step: {j}, curr loss: {loss_item}")
+                                    progress_bar.set_postfix(loss=loss_item)
                                 break
 
                         (single_prompt_embeds.grad,) = torch.autograd.grad(
@@ -737,7 +737,7 @@ class LocalStableDiffusionPipeline(StableDiffusionPipeline):
                             cloned.requires_grad = False
                             optim_history.append(cloned)
                         if print_optim is True:
-                            print(f"step: {j}, curr loss: {loss_item}")
+                            progress_bar.set_postfix(loss=loss_item)
 
                     single_prompt_embeds = single_prompt_embeds.detach()
                     single_prompt_embeds.requires_grad = False
