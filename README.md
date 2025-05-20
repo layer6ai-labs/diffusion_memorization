@@ -44,3 +44,7 @@ python perturb_gpt.py attribution_method=<score_norm|cfg_norm|flipd|random>
 ```
 
 This script looks at the already stored attributions in `outputs/attributions`, therefore, make sure to run the last part first before running this script -- we have however included some default attributions in the repo. Note that we also have a `random` method that perturbs the prompts randomly. Finally, after running this script all the perturbed prompts will be stored in a separate file in `outputs/perturbed_prompts`.
+
+# Notebooks
+
+Please check out [this](examples/inference_time_mitigation.ipynb) example notebook to see how you can use our geometric method for mitigating memorization in a diffusion model.
