@@ -5,6 +5,7 @@ defaults:
 out_dir: ./outputs
 seed: 0
 num_perturbations: 5
+temperature: 0.1
 
 model:
   model_id: CompVis/stable-diffusion-v1-4

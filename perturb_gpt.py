@@ -14,6 +14,7 @@ import dotenv
 
 from local_sd_pipeline import LocalStableDiffusionPipeline
 from optim_utils import *
+from scipy.special import softmax
 from openai import OpenAI
 
 with open('match_verbatim_captions.json') as f:
@@ -33,7 +34,7 @@ These are the rules to follow for perturbing tokens:
 Given these requirements, please provide me with a new caption, not as a sequence of tokens, but as a natural language sentence that sematically matches closely with the original caption except for the perturbed tokens. Do not say anything else in response, only provide me with the new caption.
 """
 
-def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int, method: str = 'flipd', temperature: float = 0.001):
+def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int, method: str = 'flipd', temperature: float = 0.1):
     """
     Takes a list of prompt tokens, the number of tokens to change (level), tokens and attributes as a list [[tok, attr], ...]
     and method (which is either random or looks at the token attributes)
@@ -44,11 +45,11 @@ def perturb_prompt(prompt_tokens: list, tokens_and_attributes: list, level: int,
     sorted_list = sorted(tokens_and_attributes, key=lambda x: x[1], reverse=True)
     tok_sorted_by_attribute = [tok for tok, _ in sorted_list]
     logits = np.array([attr/ temperature for _, attr in sorted_list])
-    prob_values = np.exp(logits) / np.sum(np.exp(logits))
+    prob_values = softmax(logits)
     if method == 'random':
         prob_values = np.ones_like(prob_values) / len(prob_values)
     choose_level = min(level, len(prob_values))
-    selected_tokens = np.random.choice(len(prompt_tokens), choose_level, replace=False, p=prob_values)
+    selected_tokens = np.random.choice(len(prompt_tokens), choose_level, replace=True, p=prob_values)
     selected_tokens = [tok_sorted_by_attribute[i] for i in selected_tokens]
 
     gpt_instruction = GPT_INSTRUCTION_FSTR.format(
@@ -121,6 +122,7 @@ def main(cfg: DictConfig):
                     tokens_and_attributes=tok_attr,
                     level=level,
                     method=cfg.attribution_method.name,
+                    temperature=cfg.temperature,
                 )
                 perturbations[prompt][level].append(
                     {
